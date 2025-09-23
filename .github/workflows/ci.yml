@@ -19,7 +19,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ["3.12"]   # при желании добавь "3.11"
+        python-version: ["3.12"]   # можно добавить "3.11"
 
     steps:
       - name: Checkout repo
@@ -43,6 +43,6 @@ jobs:
       - name: Check formatting
         run: ruff format --check git/src
 
-      # Линт. Формат вывода понятен интерфейсу GitHub
+      # Линт. Если будут ошибки — job завершится с ошибкой
       - name: Lint with ruff
-        run: ruff check git/src --output-format=github --exit-zero=false
+        run: ruff check git/src --output-format=github
