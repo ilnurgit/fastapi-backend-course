@@ -41,8 +41,8 @@ jobs:
 
       # Проверка форматирования (аналог black) — только проверяем, не правим
       - name: Check formatting
-        run: ruff format --check git/src.
+        run: ruff format --check git/src
 
       # Линт. Формат вывода понятен интерфейсу GitHub
       - name: Lint with ruff
-        run: ruff check git/src. --output-format=github --exit-zero=false
+        run: ruff check git/src --output-format=github --exit-zero=false
