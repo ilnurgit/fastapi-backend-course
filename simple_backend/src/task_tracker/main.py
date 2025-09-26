@@ -1,11 +1,20 @@
 from fastapi import FastAPI, status, HTTPException
 from repository import TaskRepository
 from models import Task, TaskStatus, TaskCreate, TaskUpdate
+from cloud_repository import JsonBinRepository
+import os
+from dotenv import load_dotenv
 
 app = FastAPI()
-repo = TaskRepository()
-repo.load()
+load_dotenv()
 
+def get_repo():
+    storage = os.environ.get("STORAGE", "file").lower()
+    if storage == "jsonbin":
+        return JsonBinRepository()
+    return TaskRepository()
+
+repo = get_repo()
 
 @app.get("/tasks", response_model=list[Task])
 def get_tasks() -> list[Task]:
