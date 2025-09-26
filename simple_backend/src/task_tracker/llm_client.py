@@ -1,31 +1,40 @@
-import os, httpx
+import os
+from http_client import AsyncBaseHTTPClient
 
-class CloudflareLLM:
+
+class CloudflareLLM(AsyncBaseHTTPClient):
     def __init__(self):
         self.account_id = os.environ.get("CLOUDFLARE_ACCOUNT_ID")
-        self.api_key    = os.environ.get("CLOUDFLARE_API_KEY")
-        self.model      = os.environ.get("CLOUDFLARE_MODEL", "@cf/meta/llama-2-7b-chat-int8")
+        self.api_key = os.environ.get("CLOUDFLARE_API_KEY")
+        self.model = os.environ.get("CLOUDFLARE_MODEL", "@cf/meta/llama-3-8b-instruct")
         if not self.account_id or not self.api_key:
             raise RuntimeError("CLOUDFLARE_ACCOUNT_ID и CLOUDFLARE_API_KEY обязательны")
-        self.url = f"https://api.cloudflare.com/client/v4/accounts/{self.account_id}/ai/run/{self.model}"
+        super().__init__(timeout=30.0)
 
-    async def explain_task(self, text: str) -> str:
-        headers = {
+    @property
+    def base_url(self) -> str:
+        return f"https://api.cloudflare.com/client/v4/accounts/{self.account_id}/ai/run"
+
+    @property
+    def default_headers(self):
+        return {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
+
+    async def explain_task(self, text: str) -> str:
         payload = {
             "messages": [
-                {"role": "system", "content": "Ты помощник, который предлагает пошаговое решение данной задачи кратко, не более 100 символов на русском языке. В формате, пример: 1 шаг: найти информацию в интернете. 2 шаг: выписать важные моменты"},
+                {
+                    "role": "system",
+                    "content": (
+                        "Ты помощник, который предлагает пошаговое решение задачи кратко "
+                        "(<100 символов на шаг), по-русски. Формат: 1) ... 2) ..."
+                    ),
+                },
                 {"role": "user", "content": text},
             ]
         }
-        async with httpx.AsyncClient(timeout=30) as client:
-            resp = await client.post(self.url, headers=headers, json=payload)
-            # временно оставим понятную ошибку в логах
-            if resp.status_code == 404:
-                raise RuntimeError(f"Cloudflare 404: проверь ACCOUNT_ID/модель: url={self.url}")
-            resp.raise_for_status()
-            data = resp.json()
-            # ответ у Workers AI приходит в data["result"]["response"]
-            return data["result"]["response"]
+        path = "/" + self.model.lstrip("/")
+        data = await self.post_json(path, payload)
+        return data["result"]["response"]

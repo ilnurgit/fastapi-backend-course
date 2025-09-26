@@ -1,6 +1,7 @@
 from enum import Enum
 from pydantic import BaseModel
 
+
 class TaskStatus(str, Enum):
     todo = "todo"
     in_progress = "in_progress"

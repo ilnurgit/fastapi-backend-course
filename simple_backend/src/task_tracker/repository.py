@@ -1,9 +1,9 @@
 import json
 from pathlib import Path
 from models import Task
-from pydantic import BaseModel
 
 DATA_FILE = Path("tasks.json")
+
 
 class TaskRepository:
     def __init__(self, path: Path = DATA_FILE):
@@ -25,7 +25,9 @@ class TaskRepository:
             "tasks": {k: v.model_dump() for k, v in self.tasks.items()},
             "next_id": self.next_id,
         }
-        self.path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+        self.path.write_text(
+            json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
 
     def get_all(self) -> list[Task]:
         return list(self.tasks.values())
