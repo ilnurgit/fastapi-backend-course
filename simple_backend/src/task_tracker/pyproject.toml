@@ -11,7 +11,8 @@ dependencies = [
     "fastapi (>=0.117.1,<0.118.0)",
     "uvicorn[standard] (>=0.37.0,<0.38.0)",
     "pydantic[all] (>=2.11.9,<3.0.0)",
-    "email-validator (>=2.3.0,<3.0.0)"
+    "email-validator (>=2.3.0,<3.0.0)",
+    "pathlib (>=1.0.1,<2.0.0)"
 ]
 
 
