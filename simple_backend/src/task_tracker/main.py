@@ -2,11 +2,18 @@ from fastapi import FastAPI, status, HTTPException
 from repository import TaskRepository
 from models import Task, TaskStatus, TaskCreate, TaskUpdate
 from cloud_repository import JsonBinRepository
-import os
+import os, asyncio
 from dotenv import load_dotenv
+from llm_client import CloudflareLLM
+from logging_config import setup_logging
+import logging
+
+logger = logging.getLogger("../task_tracker/main.py")
+
 
 app = FastAPI()
 load_dotenv()
+setup_logging()
 
 def get_repo():
     storage = os.environ.get("STORAGE", "file").lower()
@@ -15,6 +22,7 @@ def get_repo():
     return TaskRepository()
 
 repo = get_repo()
+llm = CloudflareLLM()
 
 @app.get("/tasks", response_model=list[Task])
 def get_tasks() -> list[Task]:
@@ -22,8 +30,16 @@ def get_tasks() -> list[Task]:
 
 
 @app.post("/tasks", response_model=Task, status_code=status.HTTP_201_CREATED)
-def create_task(payload: TaskCreate) -> Task:
-    return repo.add(title=payload.title, status=payload.status)
+async def create_task(payload: TaskCreate) -> Task:
+    logger.info("Create task request: title=%r status=%s", payload.title, payload.status)
+    task = repo.add(title=payload.title, status=payload.status)
+    try:
+        explanation = await llm.explain_task(task.title)
+        task = repo.update(task.id, {"description": explanation})
+        logger.info("Task %s enriched by LLM", task.id)
+    except Exception:
+        logger.exception("LLM enrichment failed for task_id=%s", task.id)
+    return task
 
 
 @app.put("/tasks/{task_id}", response_model=Task)

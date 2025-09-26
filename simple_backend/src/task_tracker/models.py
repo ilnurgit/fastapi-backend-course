@@ -11,6 +11,7 @@ class Task(BaseModel):
     id: int
     title: str
     status: TaskStatus = TaskStatus.todo
+    description: str | None = None
 
 
 class TaskCreate(BaseModel):
